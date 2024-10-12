@@ -14,6 +14,7 @@ import {
   MenuItem,
   MenuList,
   Image,
+  Spinner,
   useColorMode,
 } from "@chakra-ui/react";
 import { FaRegMoon } from "react-icons/fa";
@@ -28,6 +29,7 @@ import {
 import type { Wallet } from "thirdweb/wallets";
 import { SideMenu } from "./SideMenu";
 import { useRouter } from "next/navigation";
+import { useState } from "react"; // Import useState for loading state
 import styles from "../../styles/Navbar.module.css";
 
 export function Navbar() {
@@ -35,6 +37,16 @@ export function Navbar() {
   const wallet = useActiveWallet();
   const { colorMode } = useColorMode();
   const router = useRouter();
+
+  // Separate loading states for different buttons
+  const [loadingGoBack, setLoadingGoBack] = useState(false);
+  const [loadingConnect, setLoadingConnect] = useState(false);
+
+  const handleGoBack = () => {
+    setLoadingGoBack(true);
+    router.back();
+    setLoadingGoBack(false);
+  };
 
   return (
     <Box className={styles.navbarContainer} py="30px" px={{ base: "20px", lg: "50px" }}>
@@ -57,10 +69,11 @@ export function Navbar() {
             {/* Go Back Button */}
             <Button
               className={styles.collectionButton}
-              onClick={() => router.back()}
+              onClick={handleGoBack}
               bg="transparent"
               border="2px solid #FFF"
               _hover={{ backgroundColor: "#333", color: "#FFF" }}
+              isLoading={loadingGoBack} // Button-specific loading state
             >
               Go Back
             </Button>
@@ -116,6 +129,14 @@ function ProfileButton({
   const { data: ensName } = useGetENSName({ address });
   const { data: ensAvatar } = useGetENSAvatar({ ensName });
   const { colorMode } = useColorMode();
+  const [loadingLogout, setLoadingLogout] = useState(false); // Loading state for logout button
+
+  const handleLogout = async () => {
+    setLoadingLogout(true); // Show spinner
+    await disconnect(wallet); // Await disconnect operation
+    setLoadingLogout(false); // Hide spinner after logout
+  };
+
   return (
     <Menu>
       <MenuButton as={Button} height="56px">
@@ -136,11 +157,9 @@ function ProfileButton({
           SEE NFT IN YOUR WALLET {ensName ? `(${ensName})` : ""}
         </MenuItem>
         <MenuItem
-          onClick={() => {
-            if (wallet) disconnect(wallet);
-          }}
+          onClick={handleLogout} // Handle logout
         >
-          Logout
+          {loadingLogout ? <Spinner size="sm" /> : "Logout"}
         </MenuItem>
       </MenuList>
     </Menu>
